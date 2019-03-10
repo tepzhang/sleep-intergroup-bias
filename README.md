@@ -3,6 +3,7 @@
 git repo at: https://github.com/tepzhang/sleep-intergroup-bias
 ## /data and code
 
+****************Analysis****************
 analysis code.Rmd - R script for all analyses and data visualization in Study 1 & 2; 
 			open in RStudio and click "knit" to execute the whole file
 
