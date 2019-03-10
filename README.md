@@ -1,5 +1,6 @@
 # sleep-intergroup bias
 
+gir repo at: https://github.com/tepzhang/sleep-intergroup-bias
 ## /data and code
 
 analysis code.Rmd - R script for all analyses and data visualization in Study 1 & 2; 
