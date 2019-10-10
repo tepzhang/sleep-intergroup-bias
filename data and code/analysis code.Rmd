@@ -97,6 +97,7 @@ slp_dur_sd = sd(data1$PSQI_slp_dur)
 # plot the interaction continuously
 p3_s1 <- ggplot(data1, 
        aes(ID_CN, BA_bias, fill = PSQI_slp_dur))+
+  geom_hline(yintercept = 0, linetype = 2, alpha = .5)+
   geom_point(size = 3, 
              color = "grey",
              shape = 21,
@@ -160,6 +161,124 @@ plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(3, 4))
 
 ggplot2::ggsave(filename = "figures/Figure1.pdf", width = 8, height = 7)
 ```
+
+## Study 1 supplementary analysis
+
+```{r last-night sleep}
+df.study1 <- read.spss("C:/Users/tepzh/Dropbox/1CUHK-shared folder 2017-2019/Research projects_ongoing/GRF Research with Sheen Levine/DATA/Public Goods_20180607.sav",
+                       to.data.frame=T) %>% 
+  filter(PSQI_check == 1) %>% 
+  mutate(SubjectID = as.character(SubjectID))
+
+df.study1 <- df.study1 %>% 
+  mutate(diary_sleep_dur = (last_wake_hr - last_sleep_hr) + 
+           (last_wake_min - last_sleep_min)/60 - wake_min/60) %>% 
+  mutate(diary_sleep_dur = ifelse(diary_sleep_dur < 0, 
+                                  diary_sleep_dur+24, diary_sleep_dur),
+         BA_bias = (IB_N_CN - IB_P_CN)/(IB_N_CN + IB_P_CN))
+
+hist(df.study1$diary_sleep_dur)
+hist(df.study1$BA_bias)
+
+```
+
+```{r PSQI and diary sleep}
+
+cor.test(df.study1$PSQI_Q4a, df.study1$diary_sleep_dur)
+
+ggplot(df.study1, aes(PSQI_Q4a, diary_sleep_dur))+
+  geom_point(alpha = .5)+
+  geom_smooth(method = "lm")+
+  geom_abline(slope = 1, intercept = 0, linetype = 2)+
+  xlim(0, 10)+ ylim(0, 10)+
+  annotate("text", x = 0.5, y = 10, label = "r = .20")
+```
+
+```{r diary sleep and intergroup bias}
+# test the interaction model
+lm(scale(BA_bias) ~ scale(diary_sleep_dur)*scale(ID_CN), data = df.study1) %>% 
+  summary()
+```
+
+```{r coffee use}
+hist(df.study1$coffee_cups)
+table(df.study1$coffee_cups)
+```
+
+```{r trial-level logistic model}
+df.study1_BA <- df.study1 %>% 
+  select(SubjectID, PSQI_Q4a, ID_CN, IB_P1:IB_Neu7) %>% 
+  gather(BA_item, choice, IB_P1:IB_Neu7) %>% 
+  mutate(BA_type = ifelse(grepl("IB_P", BA_item), "positive",
+                          ifelse(grepl("IB_Neu", BA_item), "neutral",
+                                 "negative"))) %>% 
+  mutate(choice_num = ifelse(choice == "Chinese Mainlanders", 1, 0),
+         slp_dur = PSQI_Q4a,
+         slp_dur_scaled = scale(slp_dur),
+         BA_type_num = ifelse(BA_type == "positive", 1, 
+                              ifelse(BA_type == "negative", -1, 0)),
+         ID_CN_scaled = scale(ID_CN))
+
+
+# the trial-level logistic model
+# need to scale continuous variables, otherwise the model doesn't converge
+mod_trial1_data1 <- glmer(choice_num ~ slp_dur_scaled*ID_CN_scaled*BA_type + 
+                            (1|SubjectID) + (1|BA_item),
+                        data = df.study1_BA %>% 
+                          filter(BA_type %in% c("positive", "negative")), 
+                        family = binomial)
+
+summary(mod_trial1_data1)
+
+# positive behaviors
+glmer(choice_num ~ slp_dur_scaled*ID_CN_scaled + 
+                            (1|SubjectID) + (1|BA_item),
+                        data = df.study1_BA %>% 
+                          filter(BA_type %in% c("positive")), 
+                        family = binomial) %>% 
+  summary()
+# negative behaviors
+glmer(choice_num ~ slp_dur_scaled*ID_CN_scaled + 
+                            (1|SubjectID) + (1|BA_item),
+                        data = df.study1_BA %>% 
+                          filter(BA_type %in% c("negative")), 
+                        family = binomial) %>% 
+  summary()
+```
+
+```{r plot the trial-level model predictions}
+## construct the dataframe to predict
+df.trial_to_predict_study1 = data.frame(slp_dur_scaled = rep(rep(c(-1, 1),each = 2), 200),
+                                 BA_type = rep(rep(c("positive", "negative"), 2), 200),
+                                 ID_CN_scaled = rep(seq(-2, 2, length.out = 200), 
+                                                    each = 4))
+
+# calculate the predicted log-odds and probability
+df.trial_predicted_study1 <- mod_trial1_data1 %>% 
+  predict(newdata = df.trial_to_predict_study1, re.form = NA) %>%  # set the random effect to 0
+  as.data.frame() %>% 
+  set_names("predicted_logodds") %>% 
+  bind_cols(df.trial_to_predict_study1) %>% 
+  mutate(predicted_p = boot::inv.logit(predicted_logodds),
+         ID_CN = ID_CN_scaled*sd(df.study1_BA$ID_CN)+mean(df.study1_BA$ID_CN),
+         slp_dur_label = ifelse(slp_dur_scaled == 1, 
+                                "long sleep duration", "short sleep duration"))
+
+# plot the prediction
+p_trial_model_study1 <- df.trial_predicted_study1 %>% 
+  ggplot(aes(ID_CN, predicted_p, color = BA_type))+
+  geom_line(size = 1, alpha = .7)+
+  facet_grid(.~slp_dur_label)+
+  labs(x = "Chinese Identity", 
+       y = "p(Chinese Mainlanders)",
+       color = "behavior")+
+  ylim(0, 1)+
+  theme_classic()
+ggsave("figures/Figure S1.png", width = 6, height = 3)
+```
+
+
+
 
 
 # Study 2
@@ -253,6 +372,7 @@ data2$group <- factor(data2$group, labels = c("control", "deprived"))
 p1 <- ggplot(data2, aes(ID_CN, BA_bias, 
                         color = group,
                         fill = group))+
+  geom_hline(yintercept = 0, linetype = 2, alpha = .5)+
   geom_line(stat="smooth", method = "lm",  
               fullrange = T, alpha = .5, size = 1)+
   geom_point(shape = 21,
@@ -286,9 +406,11 @@ p1 <- ggplot(data2, aes(ID_CN, BA_bias,
 # plotting positive and negative behaviors in Study 2, Behavior Attribution Bias Task
 # transform data2 for lmer
 data2_long <- data2 %>% 
-  select(participant, group, ZID_CN, BA_P_CN, BA_N_CN) %>% 
+  select(participant, group, ID_CN, BA_P_CN, BA_N_CN) %>% 
   gather(behavior_type, number, BA_P_CN, BA_N_CN) %>% 
-  mutate(behavior = ifelse(behavior_type == "BA_P_CN", "positive", "negative"))
+  mutate(behavior = ifelse(behavior_type == "BA_P_CN", "positive", "negative"),
+         participant = as.character(participant),
+         ZID_CN = scale(ID_CN))
 
 # linear mixed-effect model for raw number of positive and negative behaviors
 mod2_data2 <- lmer(number ~ group*ZID_CN*behavior + (1|participant), data = data2_long)
@@ -349,3 +471,118 @@ plot_grid(p1, NULL, p2, nrow = 1, rel_widths = c(3.5, .5, 4))
 ggplot2::ggsave(filename = "figures/Figure2.pdf", width = 10, height = 5)
 
 ```
+
+## Study 2 supplementary analysis
+```{r PVT}
+df.study2 <- read.spss("C:/Users/tepzh/Dropbox/1CUHK-shared folder 2017-2019/Research projects_ongoing/Sleep and intergroup bias/data/SD-intergroup bias data_combined_20180723.sav", to.data.frame = T)
+
+df.study2_pvt <- df.study2 %>% 
+  select(Sub_ID, group, contains("PVT")) %>% 
+  mutate(PVT_RT_change = main_PVT_RT - pre_PVT_RT,
+         PVT_miss_change = main_PVT_miss - pre_PVT_miss)
+
+# check the distributional information of PVT changes in the two groups
+psych::describeBy(df.study2_pvt, group = df.study2_pvt$group)
+
+t.test(PVT_RT_change ~ group, data = df.study2_pvt)
+t.test(PVT_miss_change ~ group, data = df.study2_pvt)
+
+```
+
+```{r trial-level logistic model}
+df.study2_BA <- df.study2 %>% 
+  select(Sub_ID, group, ID_CN, IB_P1:IB_Neu7) %>% 
+  gather(BA_item, choice, IB_P1:IB_Neu7) %>% 
+  mutate(BA_type = ifelse(grepl("IB_P", BA_item), "positive",
+                          ifelse(grepl("IB_Neu", BA_item), "neutral",
+                                 "negative"))) %>% 
+  mutate(choice_num = ifelse(choice == "Chinese Mainlanders", 1, 0),
+         group_num = ifelse(group == "sleep deprivation", 1, 0),
+         BA_type_num = ifelse(BA_type == "positive", 1, 
+                              ifelse(BA_type == "negative", -1, 0)),
+         ID_CN_scaled = scale(ID_CN))
+
+
+# the trial-level logistic model
+# need to scale continuous variables, otherwise the model doesn't converge
+mod_trial1_data2 <- glmer(choice_num ~ group*ID_CN_scaled*BA_type + 
+                            (1|Sub_ID) + (1|BA_item),
+                        data = df.study2_BA %>% 
+                          filter(BA_type %in% c("positive", "negative")), 
+                        family = binomial)
+
+summary(mod_trial1_data2)
+
+
+# sleep-control group
+glmer(choice_num ~ scale(ID_CN)*BA_type + (1|Sub_ID) + (1|BA_item),
+                        data = df.study2_BA %>% 
+        filter(BA_type %in% c("positive", "negative"), group == "sleep control"), 
+                        family = binomial) %>% 
+  summary()
+# sleep-deprivation group
+glmer(choice_num ~ scale(ID_CN)*BA_type + (1|Sub_ID) + (1|BA_item),
+                        data = df.study2_BA %>% 
+        filter(BA_type %in% c("positive", "negative"),group == "sleep deprivation"), 
+                        family = binomial) %>% 
+  summary()
+
+# Alternatively, using the brm model
+mod_trial1_data2_brm <- brm(choice_num ~ group_num*ID_CN*BA_type +
+                              (1|Sub_ID) + (1|BA_item),
+                        data = df.study2_BA %>% 
+                          filter(BA_type %in% c("positive", "negative")), 
+                        family = binomial)
+
+mod_trial1_data2_brm %>% print()
+mod_trial1_data2_brm %>% plot()
+```
+
+```{r visualize the trial-level data}
+ggplot(df.study2_BA %>% filter(BA_type %in% c("positive", "negative")),
+       aes(ID_CN, choice_num))+
+  geom_point(alpha = .1)+
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"))+
+  facet_grid(BA_type~group)+
+  labs(x = "Chinese Identity", y = "Probability of choosing Chinese Mainlanders")
+
+```
+
+```{r plot the trial-level model prediction}
+## construct the dataframe to predict
+df.trial_to_predict = data.frame(group = rep(rep(c("sleep control", 
+                                                       "sleep deprivation"),
+                                                 each = 2), 200),
+                                 BA_type = rep(rep(c("positive", "negative"), 2), 200),
+                                 ID_CN_scaled = rep(seq(-2, 2, length.out = 200), 
+                                                    each = 4))
+
+# calculate the predicted log-odds and probability
+df.trial_predicted <- mod_trial1_data2 %>% 
+  predict(newdata = df.trial_to_predict, re.form = NA) %>%  # set the random effect to 0
+  as.data.frame() %>% 
+  set_names("predicted_logodds") %>% 
+  bind_cols(df.trial_to_predict) %>% 
+  mutate(predicted_p = boot::inv.logit(predicted_logodds),
+         ID_CN = ID_CN_scaled*sd(df.study2_BA$ID_CN)+mean(df.study2_BA$ID_CN))
+
+# plot the prediction
+p_trial_model_study2 <- df.trial_predicted %>% ggplot(aes(ID_CN, predicted_p, color = BA_type))+
+  geom_line(size = 1, alpha = .7)+
+  facet_wrap(.~group)+
+  labs(x = "Chinese Identity", 
+       y = "p(Chinese Mainlanders)",
+       color = "behavior")+
+  ylim(0, 1)+
+  theme_classic()
+ggsave("figures/Figure S2.png", width = 6, height = 3)
+
+
+plot_grid(p_trial_model_study1, p_trial_model_study2,
+          ncol = 1)
+ggsave("figures/Figure S3.pdf", width = 8, height = 8)
+
+
+```
+
