@@ -1,3 +1,4 @@
 *.docx
 *.sps
-
+data and code/analysis code.Rmd
+.Rproj.user

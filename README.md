@@ -5,18 +5,17 @@ git repo at: https://github.com/tepzhang/sleep-intergroup-bias
 
 ****************Analysis****************  
 analysis code.Rmd - R script for all analyses and data visualization in Study 1 & 2; 
-			open in RStudio and click "knit" to execute the whole file
+			open in RStudio and run each chunk of code
+			or click "knit" to execute the whole file
 
 ****************Study 1*****************  
-study 1_data.sav - final data of study 1, to be opened in SPSS  
-study 1_item data.sav - item-wise data of study 1, to be opened in SPSS  
-study 1_analysis syntax.sps - SPSS syntax for analyzing study 1 data  
+study 1_data.sav - final data of study 1, can be opened in SPSS  
+study 1_item data.sav - item-wise data of study 1, can be opened in SPSS
 
 
 ****************Study 2*****************  
-study 2_data.sav - final data of study 2, to be opened in SPSS  
-study 2_item data.sav - item-wise data of study 2, to be opened in SPSS  
-study 2_analysis syntax.sps - SPSS syntax for analyzing study 2 data
+study 2_data.sav - final data of study 2, can be opened in SPSS  
+study 2_item data.sav - item-wise data of study 2, can be opened in SPSS
 
 
 ## /materials

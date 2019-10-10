@@ -164,40 +164,12 @@ ggplot2::ggsave(filename = "figures/Figure1.pdf", width = 8, height = 7)
 
 ## Study 1 supplementary analysis
 
-```{r last-night sleep}
+```{r read supplementary data}
 df.study1 <- read.spss("C:/Users/tepzh/Dropbox/1CUHK-shared folder 2017-2019/Research projects_ongoing/GRF Research with Sheen Levine/DATA/Public Goods_20180607.sav",
                        to.data.frame=T) %>% 
   filter(PSQI_check == 1) %>% 
   mutate(SubjectID = as.character(SubjectID))
 
-df.study1 <- df.study1 %>% 
-  mutate(diary_sleep_dur = (last_wake_hr - last_sleep_hr) + 
-           (last_wake_min - last_sleep_min)/60 - wake_min/60) %>% 
-  mutate(diary_sleep_dur = ifelse(diary_sleep_dur < 0, 
-                                  diary_sleep_dur+24, diary_sleep_dur),
-         BA_bias = (IB_N_CN - IB_P_CN)/(IB_N_CN + IB_P_CN))
-
-hist(df.study1$diary_sleep_dur)
-hist(df.study1$BA_bias)
-
-```
-
-```{r PSQI and diary sleep}
-
-cor.test(df.study1$PSQI_Q4a, df.study1$diary_sleep_dur)
-
-ggplot(df.study1, aes(PSQI_Q4a, diary_sleep_dur))+
-  geom_point(alpha = .5)+
-  geom_smooth(method = "lm")+
-  geom_abline(slope = 1, intercept = 0, linetype = 2)+
-  xlim(0, 10)+ ylim(0, 10)+
-  annotate("text", x = 0.5, y = 10, label = "r = .20")
-```
-
-```{r diary sleep and intergroup bias}
-# test the interaction model
-lm(scale(BA_bias) ~ scale(diary_sleep_dur)*scale(ID_CN), data = df.study1) %>% 
-  summary()
 ```
 
 ```{r coffee use}
