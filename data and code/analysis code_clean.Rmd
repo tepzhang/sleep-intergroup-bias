@@ -164,12 +164,8 @@ ggplot2::ggsave(filename = "figures/Figure1.pdf", width = 8, height = 7)
 
 ## Study 1 supplementary analysis
 
-```{r read supplementary data}
-df.study1 <- read.spss("C:/Users/tepzh/Dropbox/1CUHK-shared folder 2017-2019/Research projects_ongoing/GRF Research with Sheen Levine/DATA/Public Goods_20180607.sav",
-                       to.data.frame=T) %>% 
-  filter(PSQI_check == 1) %>% 
-  mutate(SubjectID = as.character(SubjectID))
-
+```{r read supplementary data1}
+df.study1 <- read_csv("study1_supplement_data.csv")
 ```
 
 ```{r coffee use}
@@ -218,12 +214,14 @@ glmer(choice_num ~ slp_dur_scaled*ID_CN_scaled +
   summary()
 ```
 
+
 ```{r plot the trial-level model predictions}
 ## construct the dataframe to predict
-df.trial_to_predict_study1 = data.frame(slp_dur_scaled = rep(rep(c(-1, 1),each = 2), 200),
-                                 BA_type = rep(rep(c("positive", "negative"), 2), 200),
-                                 ID_CN_scaled = rep(seq(-2, 2, length.out = 200), 
-                                                    each = 4))
+df.trial_to_predict_study1 = 
+  data.frame(slp_dur_scaled = rep(rep(c(-1, 1),each = 2), 200),
+             BA_type = rep(rep(c("positive", "negative"), 2), 200),
+             ID_CN_scaled = rep(seq(-2, 2, length.out = 200), 
+                                each = 4))
 
 # calculate the predicted log-odds and probability
 df.trial_predicted_study1 <- mod_trial1_data1 %>% 
@@ -246,7 +244,7 @@ p_trial_model_study1 <- df.trial_predicted_study1 %>%
        color = "behavior")+
   ylim(0, 1)+
   theme_classic()
-ggsave("figures/Figure S1.png", width = 6, height = 3)
+# ggsave("figures/Figure S1.png", width = 6, height = 3)
 ```
 
 
@@ -440,14 +438,17 @@ p2 <- ggplot(data_predict_result, aes(CNID, y=fit,
         )
 
 plot_grid(p1, NULL, p2, nrow = 1, rel_widths = c(3.5, .5, 4))
-ggplot2::ggsave(filename = "figures/Figure2.pdf", width = 10, height = 5)
+# ggplot2::ggsave(filename = "figures/Figure2.pdf", width = 10, height = 5)
 
 ```
 
 ## Study 2 supplementary analysis
-```{r PVT}
-df.study2 <- read.spss("C:/Users/tepzh/Dropbox/1CUHK-shared folder 2017-2019/Research projects_ongoing/Sleep and intergroup bias/data/SD-intergroup bias data_combined_20180723.sav", to.data.frame = T)
+```{r read supplementary data2}
+df.study2 <- read_csv("study2_supplement_data.csv")
 
+```
+
+```{r PVT}
 df.study2_pvt <- df.study2 %>% 
   select(Sub_ID, group, contains("PVT")) %>% 
   mutate(PVT_RT_change = main_PVT_RT - pre_PVT_RT,
@@ -548,12 +549,12 @@ p_trial_model_study2 <- df.trial_predicted %>% ggplot(aes(ID_CN, predicted_p, co
        color = "behavior")+
   ylim(0, 1)+
   theme_classic()
-ggsave("figures/Figure S2.png", width = 6, height = 3)
+# ggsave("figures/Figure S2.png", width = 6, height = 3)
 
 
 plot_grid(p_trial_model_study1, p_trial_model_study2,
           ncol = 1)
-ggsave("figures/Figure S3.pdf", width = 8, height = 8)
+# ggsave("figures/Figure S3.pdf", width = 8, height = 8)
 
 
 ```
