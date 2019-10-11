@@ -13,7 +13,7 @@ study 1_data.sav - final data of study 1 with variable labels, can be opened in 
 study1_supplement_data.csv - supplementary data of study 1
 
 
-*****************Study 2*****************
+*****************Study 2*****************  
 study 2_data.sav - final data of study 2  with variable labels, can be opened in SPSS and read in R
 study2_supplement_data.csv - supplementary data of study 2
 
