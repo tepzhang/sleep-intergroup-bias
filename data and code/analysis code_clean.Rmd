@@ -1,12 +1,12 @@
 ---
 title: "sleep and intergroup bias"
 author: "Jinxiao Zhang"
-date: "`r Sys.time()`"
+date: "July 2019"
 output: html_document
 ---
 
 ## load packages
-```{r load library, warning=FALSE}
+```{r load library, warning=FALSE, message=FALSE}
 library(foreign)
 library(kableExtra)
 #library(ez)
@@ -159,7 +159,7 @@ bottom_row <- plot_grid(p3_s1, NULL, rel_widths = c(3, 1))
 # then combine with the top row for final plot
 plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(3, 4))
 
-ggplot2::ggsave(filename = "figures/Figure1.pdf", width = 8, height = 7)
+# ggplot2::ggsave(filename = "figures/Figure1.pdf", width = 8, height = 7)
 ```
 
 ## Study 1 supplementary analysis
@@ -173,7 +173,7 @@ hist(df.study1$coffee_cups)
 table(df.study1$coffee_cups)
 ```
 
-```{r trial-level logistic model}
+```{r Study 1: trial-level logistic model}
 df.study1_BA <- df.study1 %>% 
   select(SubjectID, PSQI_Q4a, ID_CN, IB_P1:IB_Neu7) %>% 
   gather(BA_item, choice, IB_P1:IB_Neu7) %>% 
@@ -244,6 +244,7 @@ p_trial_model_study1 <- df.trial_predicted_study1 %>%
        color = "behavior")+
   ylim(0, 1)+
   theme_classic()
+print(p_trial_model_study1)
 # ggsave("figures/Figure S1.png", width = 6, height = 3)
 ```
 
@@ -334,7 +335,7 @@ lm(scale(BA_bias) ~ group_t*scale(ID_CN), data = data2) %>% summary()
 
 
 
-```{r Plotting BA_task, echo=FALSE}
+```{r Plotting BA_task, warning=FALSE}
 ## Figure 2a
 data2$group <- factor(data2$group, labels = c("control", "deprived"))
 
@@ -448,7 +449,7 @@ df.study2 <- read_csv("study2_supplement_data.csv")
 
 ```
 
-```{r PVT}
+```{r PVT, warning=FALSE}
 df.study2_pvt <- df.study2 %>% 
   select(Sub_ID, group, contains("PVT")) %>% 
   mutate(PVT_RT_change = main_PVT_RT - pre_PVT_RT,
@@ -462,7 +463,7 @@ t.test(PVT_miss_change ~ group, data = df.study2_pvt)
 
 ```
 
-```{r trial-level logistic model}
+```{r Study 2: trial-level logistic model}
 df.study2_BA <- df.study2 %>% 
   select(Sub_ID, group, ID_CN, IB_P1:IB_Neu7) %>% 
   gather(BA_item, choice, IB_P1:IB_Neu7) %>% 
@@ -500,27 +501,8 @@ glmer(choice_num ~ scale(ID_CN)*BA_type + (1|Sub_ID) + (1|BA_item),
                         family = binomial) %>% 
   summary()
 
-# Alternatively, using the brm model
-mod_trial1_data2_brm <- brm(choice_num ~ group_num*ID_CN*BA_type +
-                              (1|Sub_ID) + (1|BA_item),
-                        data = df.study2_BA %>% 
-                          filter(BA_type %in% c("positive", "negative")), 
-                        family = binomial)
-
-mod_trial1_data2_brm %>% print()
-mod_trial1_data2_brm %>% plot()
 ```
 
-```{r visualize the trial-level data}
-ggplot(df.study2_BA %>% filter(BA_type %in% c("positive", "negative")),
-       aes(ID_CN, choice_num))+
-  geom_point(alpha = .1)+
-  geom_smooth(method = "glm",
-              method.args = list(family = "binomial"))+
-  facet_grid(BA_type~group)+
-  labs(x = "Chinese Identity", y = "Probability of choosing Chinese Mainlanders")
-
-```
 
 ```{r plot the trial-level model prediction}
 ## construct the dataframe to predict
@@ -549,13 +531,8 @@ p_trial_model_study2 <- df.trial_predicted %>% ggplot(aes(ID_CN, predicted_p, co
        color = "behavior")+
   ylim(0, 1)+
   theme_classic()
+print(p_trial_model_study2)
 # ggsave("figures/Figure S2.png", width = 6, height = 3)
-
-
-plot_grid(p_trial_model_study1, p_trial_model_study2,
-          ncol = 1)
-# ggsave("figures/Figure S3.pdf", width = 8, height = 8)
-
 
 ```
 
